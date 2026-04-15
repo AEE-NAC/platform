@@ -11,6 +11,6 @@ db_name = ${DB_NAME}
 http_port = 8069
 workers = ${WORKERS}
 max_cron_threads = ${MAX_CRON_THREADS}
-
+proxy_mode = True
 logfile = /var/log/odoo/odoo.log
 log_level = ${LOG_LEVEL}
