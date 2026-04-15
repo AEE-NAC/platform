@@ -1,7 +1,15 @@
 FROM python:3.12-slim-bookworm
 
-# Dépendances système
+# Éviter les fichiers .pyc et activer le flush des logs
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+
+# Dépendances système + wkhtmltopdf
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    xz-utils \
     libldap2-dev \
     libsasl2-dev \
     libssl-dev \
@@ -10,26 +18,42 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     node-less \
     npm \
-    curl \
-    wget \
     gettext-base \
-    && rm -rf /var/lib/apt/lists/*
+    postgresql-client \
+    && curl -o wkhtmltox.deb -sSL https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-3/wkhtmltox_0.12.6.1-3.jammy_amd64.deb \
+    && apt-get install -y --no-install-recommends ./wkhtmltox.deb \
+    && rm -rf /var/lib/apt/lists/* wkhtmltox.deb
 
-# Création des dossiers nécessaires
-RUN mkdir -p /etc/odoo /var/lib/odoo /var/log/odoo
+# Installation de rtlcss pour le support du RTL
+RUN npm install -g rtlcss
+
+# Création de l'utilisateur odoo et des dossiers
+RUN useradd -m -d /var/lib/odoo -s /bin/bash odoo \
+    && mkdir -p /etc/odoo /var/lib/odoo /var/log/odoo /mnt/extra-addons \
+    && chown -R odoo:odoo /etc/odoo /var/lib/odoo /var/log/odoo /mnt/extra-addons
 
 WORKDIR /app
 
+# Installation des dépendances Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copie du code source
 COPY . .
 
-# Copie du template et du script d'entrée
-COPY odoo.conf.template /app/odoo.conf.template
+# Configuration de l'environnement
+ENV ODOO_RC /etc/odoo/odoo.conf
+COPY odoo.conf.template /etc/odoo/odoo.conf.template
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-EXPOSE 8069
+# Définition des volumes pour la persistance des fichiers (filestore)
+VOLUME ["/var/lib/odoo", "/mnt/extra-addons"]
+
+# Ports : 8069 (web), 8072 (longpolling pour le chat)
+EXPOSE 8069 8072
+
+USER odoo
 
 ENTRYPOINT ["/entrypoint.sh"]
+CMD ["odoo"]
