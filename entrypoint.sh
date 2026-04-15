@@ -10,6 +10,11 @@ for var in "${required_vars[@]}"; do
     fi
 done
 
+# Définit les valeurs par défaut avant substitution (envsubst ne gère pas ${VAR:-default})
+export WORKERS="${WORKERS:-2}"
+export MAX_CRON_THREADS="${MAX_CRON_THREADS:-1}"
+export LOG_LEVEL="${LOG_LEVEL:-info}"
+
 # Génère odoo.conf à partir du template en substituant les variables
 envsubst < /app/odoo.conf.template > /etc/odoo/odoo.conf
 
