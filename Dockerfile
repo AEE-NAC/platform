@@ -86,4 +86,3 @@ EXPOSE 8069 8072
 USER odoo
 
 ENTRYPOINT ["/entrypoint.sh"]
-CMD ["odoo"]
