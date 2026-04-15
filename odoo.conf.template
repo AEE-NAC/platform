@@ -13,5 +13,4 @@ workers = ${WORKERS}
 max_cron_threads = ${MAX_CRON_THREADS}
 http_interface = 0.0.0.0
 proxy_mode = True
-logfile = /var/log/odoo/odoo.log
 log_level = ${LOG_LEVEL}
